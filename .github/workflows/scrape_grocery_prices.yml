@@ -68,9 +68,9 @@ jobs:
         run: |
           # Ensure the script is executable if needed: chmod +x ./grocery_scraper_service/grocery_scraper.py
           python ./grocery_scraper_service/grocery_scraper.py \
-            --location_json '${{ github.event.inputs.location_json || ''{"zip_code": "00000"}'' }}' \
-            --stores_config_json '${{ github.event.inputs.stores_config_json || ''[]'' }}' \
-            --products_json '${{ github.event.inputs.products_json || ''[]'' }}' \
+            --location_json '${{ github.event.inputs.location_json || '{"zip_code": "00000"}' }}' \
+            --stores_config_json '${{ github.event.inputs.stores_config_json || '[]' }}' \
+            --products_json '${{ github.event.inputs.products_json || '[]' }}' \
             --github_repo_url '${{ github.event.inputs.github_repo_url }}' \
             --github_pat "$GH_PAT" \
             --github_branch '${{ github.event.inputs.github_branch }}' \
