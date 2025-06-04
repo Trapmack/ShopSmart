@@ -1,0 +1,75 @@
+# .github/workflows/scrape_grocery_prices.yml
+
+name: Scrape Grocery Prices
+
+on:
+  workflow_dispatch:
+    inputs:
+      location_json:
+        description: 'Location JSON (e.g., {"zip_code": "90210"})'
+        required: true
+        default: '{"zip_code": "90210", "city": "Beverly Hills"}'
+      stores_config_json:
+        description: 'Stores Config JSON (e.g., [{"name": "Store A", "url": "http://...", "identifier": "example_store_type_1"}])'
+        required: true
+        default: '[{"name": "Example Grocer", "url": "https://www.examplegrocery.com", "identifier": "example_store_type_1"}]'
+      products_json:
+        description: 'Products JSON (e.g., ["milk 1 gallon", "eggs dozen"])'
+        required: true
+        default: '["organic milk 1 gallon", "free range eggs dozen"]'
+      github_repo_url:
+        description: 'Target GitHub Repo URL (e.g., https://github.com/your-user/your-repo.git)'
+        required: true
+        default: 'https://github.com/Trapmack/ShopSmart.git' # Defaulting to ShopSmart repo
+      github_branch:
+        description: 'Target GitHub Branch (e.g., main or data-updates)'
+        required: true
+        default: 'main'
+      github_file_path_prefix:
+        description: 'File Path Prefix in Repo (e.g., scraped_data/daily/)'
+        required: true
+        default: 'scraped_prices/workflow_triggered/'
+      git_user_name:
+        description: 'Git User Name for Commits'
+        required: true
+        default: 'GitHub Actions Scraper Bot'
+      git_user_email:
+        description: 'Git User Email for Commits'
+        required: true
+        default: 'actions-bot@users.noreply.github.com'
+
+  # schedule:
+  #   - cron: '0 5 * * *'
+
+jobs:
+  scrape_and_commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Assuming requirements.txt is in grocery_scraper_service/
+          if [ -f ./grocery_scraper_service/requirements.txt ]; then pip install -r ./grocery_scraper_service/requirements.txt; fi
+
+      - name: Run Grocery Scraper Script
+        env:
+          GH_PAT: ${{ secrets.GROCERY_SCRAPER_PAT }}
+        run: |
+          python ./grocery_scraper_service/grocery_scraper.py             --location_json '${{ github.event.inputs.location_json || ''{"zip_code": "00000"}'' }}'             --stores_config_json '${{ github.event.inputs.stores_config_json || ''[]'' }}'             --products_json '${{ github.event.inputs.products_json || ''[]'' }}'             --github_repo_url '${{ github.event.inputs.github_repo_url }}'             --github_pat "$GH_PAT"             --github_branch '${{ github.event.inputs.github_branch }}'             --github_file_path_prefix '${{ github.event.inputs.github_file_path_prefix }}'             --git_user_name '${{ github.event.inputs.git_user_name }}'             --git_user_email '${{ github.event.inputs.git_user_email }}'
+        # For scheduled runs, adapt the above command or use a config file
+        # if [ "${{ github.event_name }}" == "schedule" ]; then
+        #   echo "Running scheduled job with predefined parameters..."
+        #   python ./grocery_scraper_service/grocery_scraper.py         #     --location_json '{"zip_code": "YOUR_DEFAULT_ZIP"}'         #     --stores_config_json '[{"name": "Default Store", "url": "https://default.com", "identifier": "example_store_type_1"}]'         #     --products_json '["default product"]'         #     --github_repo_url 'https://github.com/Trapmack/ShopSmart.git'         #     --github_pat "$GH_PAT"         #     --github_branch 'main'         #     --github_file_path_prefix 'scraped_data/scheduled/'         #     --git_user_name 'Scheduled Scraper Bot'         #     --git_user_email 'actions-bot@users.noreply.github.com'
+        # fi
+
+      - name: Output commit URL (Informational)
+        run: echo "Scraping script finished. Check script logs for the commit URL."
