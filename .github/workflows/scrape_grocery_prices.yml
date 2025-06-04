@@ -39,7 +39,7 @@ on:
         default: 'actions-bot@users.noreply.github.com'
 
   # schedule:
-  #   - cron: '0 5 * * *'
+  #   - cron: '0 5 * * *' # Uncomment and adjust cron schedule as needed
 
 jobs:
   scrape_and_commit:
@@ -62,14 +62,39 @@ jobs:
 
       - name: Run Grocery Scraper Script
         env:
+          # GITHUB_PAT is a secret configured in your repository settings
+          # (Settings > Secrets and variables > Actions > New repository secret)
           GH_PAT: ${{ secrets.GROCERY_SCRAPER_PAT }}
         run: |
-          python ./grocery_scraper_service/grocery_scraper.py             --location_json '${{ github.event.inputs.location_json || ''{"zip_code": "00000"}'' }}'             --stores_config_json '${{ github.event.inputs.stores_config_json || ''[]'' }}'             --products_json '${{ github.event.inputs.products_json || ''[]'' }}'             --github_repo_url '${{ github.event.inputs.github_repo_url }}'             --github_pat "$GH_PAT"             --github_branch '${{ github.event.inputs.github_branch }}'             --github_file_path_prefix '${{ github.event.inputs.github_file_path_prefix }}'             --git_user_name '${{ github.event.inputs.git_user_name }}'             --git_user_email '${{ github.event.inputs.git_user_email }}'
-        # For scheduled runs, adapt the above command or use a config file
+          # Ensure the script is executable if needed: chmod +x ./grocery_scraper_service/grocery_scraper.py
+          python ./grocery_scraper_service/grocery_scraper.py \
+            --location_json '${{ github.event.inputs.location_json || ''{"zip_code": "00000"}'' }}' \
+            --stores_config_json '${{ github.event.inputs.stores_config_json || ''[]'' }}' \
+            --products_json '${{ github.event.inputs.products_json || ''[]'' }}' \
+            --github_repo_url '${{ github.event.inputs.github_repo_url }}' \
+            --github_pat "$GH_PAT" \
+            --github_branch '${{ github.event.inputs.github_branch }}' \
+            --github_file_path_prefix '${{ github.event.inputs.github_file_path_prefix }}' \
+            --git_user_name '${{ github.event.inputs.git_user_name }}' \
+            --git_user_email '${{ github.event.inputs.git_user_email }}'
+        # Note: For scheduled runs, github.event.inputs will be empty.
+        # You'd typically hardcode parameters for scheduled runs or read them from a config file
+        # committed in the repository.
+        # Example for scheduled run (replace inputs with actual values or config file logic):
         # if [ "${{ github.event_name }}" == "schedule" ]; then
-        #   echo "Running scheduled job with predefined parameters..."
-        #   python ./grocery_scraper_service/grocery_scraper.py         #     --location_json '{"zip_code": "YOUR_DEFAULT_ZIP"}'         #     --stores_config_json '[{"name": "Default Store", "url": "https://default.com", "identifier": "example_store_type_1"}]'         #     --products_json '["default product"]'         #     --github_repo_url 'https://github.com/Trapmack/ShopSmart.git'         #     --github_pat "$GH_PAT"         #     --github_branch 'main'         #     --github_file_path_prefix 'scraped_data/scheduled/'         #     --git_user_name 'Scheduled Scraper Bot'         #     --git_user_email 'actions-bot@users.noreply.github.com'
+        #   python ./grocery_scraper_service/grocery_scraper.py \
+        #     --location_json '{"zip_code": "12345"}' \
+        #     --stores_config_json '[{"name": "Scheduled Store", "url": "...", "identifier": "..."}]' \
+        #     --products_json '["scheduled product"]' \
+        #     --github_repo_url 'https://github.com/Trapmack/ShopSmart.git' \
+        #     --github_pat "$GH_PAT" \
+        #     --github_branch 'data-updates' \
+        #     --github_file_path_prefix 'scraped_data/scheduled/' \
+        #     --git_user_name 'Scheduled Scraper Bot' \
+        #     --git_user_email 'actions-bot@users.noreply.github.com'
         # fi
 
       - name: Output commit URL (Informational)
+        # The Python script already prints the GitHub URL of the committed file.
+        # This step is just to show that the action completed.
         run: echo "Scraping script finished. Check script logs for the commit URL."
